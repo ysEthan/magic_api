@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django_filters',
     
     # Local apps
-    
+    'apps.authentication.apps.AuthenticationConfig',
 ]
 
 MIDDLEWARE = [
@@ -143,10 +143,9 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # REST Framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
@@ -165,8 +164,8 @@ AUTH_USER_MODEL = 'authentication.User'
 # JWT设置
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
