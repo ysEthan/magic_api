@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from apps.products.models import Product
+from datetime import datetime
 
 User = get_user_model()
 
@@ -34,6 +35,24 @@ class ProductionCategory(models.Model):
 
     def __str__(self):
         return f"{self.get_category_type_display()} - {self.name}"
+
+
+class ProductionChannel(models.Model):
+    """来源渠道"""
+    code = models.CharField(_('渠道编码'), max_length=20, unique=True)
+    name = models.CharField(_('渠道名称'), max_length=50)
+    description = models.TextField(_('渠道描述'), blank=True)
+    is_active = models.BooleanField(_('是否启用'), default=True)
+    created_at = models.DateTimeField(_('创建时间'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('更新时间'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('来源渠道')
+        verbose_name_plural = _('来源渠道')
+        ordering = ['code']
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class ProductionOrder(models.Model):
@@ -130,6 +149,14 @@ class ProductionOrder(models.Model):
         blank=True,
         help_text=_('任务相关的文件URL列表，如设计文件、参考图等')
     )
+    channel = models.ForeignKey(
+        ProductionChannel,
+        verbose_name=_('来源渠道'),
+        on_delete=models.PROTECT,
+        related_name='orders',
+        null=True,
+        blank=True
+    )
 
     class Meta:
         verbose_name = _('生产任务')
@@ -139,6 +166,26 @@ class ProductionOrder(models.Model):
     def __str__(self):
         product_name = self.product.name if self.product else "未关联产品"
         return f"{self.code} - {product_name}"
+
+    @staticmethod
+    def generate_next_code():
+        """生成下一个任务编号
+        格式：D + YYMMDD + 4位序号（基于表ID）
+        示例：D2403070001
+        """
+        today = datetime.now()
+        date_part = today.strftime('%y%m%d')  # 240307
+        
+        # 获取最大ID
+        last_id = ProductionOrder.objects.all().order_by('-id').values_list('id', flat=True).first()
+        
+        if last_id is not None:
+            next_number = last_id + 1
+        else:
+            next_number = 1
+            
+        # 格式化为：D + 日期 + 4位数字（使用ID）
+        return f"D{date_part}-{next_number:04d}"  # 例如：D2403070001
 
 
 class ProductionStep(models.Model):

@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import ProductionCategory, ProductionOrder, ProductionStep, ProductionComment
+from .models import ProductionCategory, ProductionOrder, ProductionStep, ProductionComment, ProductionChannel
 from apps.authentication.serializers import UserSerializer
 from django.conf import settings
+from datetime import datetime
 
 
 class ProductionCategorySerializer(serializers.ModelSerializer):
@@ -35,6 +36,12 @@ class ProductionCommentSerializer(serializers.ModelSerializer):
         return []
 
 
+class ProductionChannelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductionChannel
+        fields = ['id', 'code', 'name', 'description', 'is_active']
+
+
 class ProductionOrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     order_type_display = serializers.CharField(source='get_order_type_display', read_only=True)
@@ -46,6 +53,7 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
     product_info = serializers.SerializerMethodField(read_only=True)
     category_info = serializers.SerializerMethodField(read_only=True)
     main_image_url = serializers.SerializerMethodField(read_only=True)
+    channel_info = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProductionOrder
@@ -92,6 +100,15 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
             return obj.main_image.url
         return None
 
+    def get_channel_info(self, obj):
+        if obj.channel:
+            return {
+                'id': obj.channel.id,
+                'code': obj.channel.code,
+                'name': obj.channel.name
+            }
+        return None
+
     def validate_attachments(self, value):
         if not isinstance(value, list):
             raise serializers.ValidationError('附件必须是URL列表格式')
@@ -116,4 +133,14 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
                 'priority_order': '优先级排序值不能小于0'
             })
             
-        return data 
+        return data
+
+    def validate_code(self, value):
+        """不再验证编号格式"""
+        return value
+
+    def create(self, validated_data):
+        """如果没有提供编号，自动生成"""
+        if 'code' not in validated_data:
+            validated_data['code'] = ProductionOrder.generate_next_code()
+        return super().create(validated_data) 

@@ -3,13 +3,15 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters import rest_framework as filters
-from .models import ProductionCategory, ProductionOrder, ProductionStep, ProductionComment
+from .models import ProductionCategory, ProductionOrder, ProductionStep, ProductionComment, ProductionChannel
 from .serializers import (
     ProductionCategorySerializer, ProductionOrderSerializer,
-    ProductionStepSerializer, ProductionCommentSerializer
+    ProductionStepSerializer, ProductionCommentSerializer,
+    ProductionChannelSerializer
 )
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
+from datetime import datetime
 
 
 class ProductionCategoryViewSet(viewsets.ModelViewSet):
@@ -131,6 +133,15 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
             'main_image_url': request.build_absolute_uri(order.main_image.url)
         })
 
+    @action(detail=False, methods=['get'])
+    def next_id(self, request):
+        """获取下一个任务编号"""
+        next_code = ProductionOrder.generate_next_code()
+        print(next_code)
+        return Response({
+            'code': next_code
+        })
+
 
 class ProductionStepViewSet(viewsets.ModelViewSet):
     """生产步骤视图集"""
@@ -166,4 +177,13 @@ class ProductionCommentViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at']
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user) 
+        serializer.save(author=self.request.user)
+
+
+class ProductionChannelViewSet(viewsets.ModelViewSet):
+    """生产渠道视图集"""
+    queryset = ProductionChannel.objects.all()
+    serializer_class = ProductionChannelSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['is_active']
+    search_fields = ['code', 'name', 'description'] 
