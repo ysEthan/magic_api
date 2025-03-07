@@ -50,7 +50,8 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'product': {'required': False, 'allow_null': True},
-            'category': {'required': False, 'allow_null': True}
+            'category': {'required': False, 'allow_null': True},
+            'priority_order': {'required': False}
         }
 
     def get_comments(self, obj):
@@ -84,4 +85,10 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'category': '所选类目未启用'
             })
+        
+        if 'priority_order' in data and data['priority_order'] < 0:
+            raise serializers.ValidationError({
+                'priority_order': '优先级排序值不能小于0'
+            })
+            
         return data 

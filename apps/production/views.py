@@ -24,6 +24,8 @@ class ProductionOrderFilter(filters.FilterSet):
     max_planned_start_date = filters.DateFilter(field_name='planned_start_date', lookup_expr='lte')
     min_created_at = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
     max_created_at = filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+    min_priority_order = filters.NumberFilter(field_name='priority_order', lookup_expr='gte')
+    max_priority_order = filters.NumberFilter(field_name='priority_order', lookup_expr='lte')
 
     class Meta:
         model = ProductionOrder
@@ -31,6 +33,7 @@ class ProductionOrderFilter(filters.FilterSet):
             'order_type': ['exact'],
             'status': ['exact'],
             'priority': ['exact'],
+            'priority_order': ['exact'],
             'category': ['exact'],
             'product': ['exact'],
             'manager': ['exact'],
@@ -45,7 +48,7 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filterset_class = ProductionOrderFilter
     search_fields = ['code', 'description']
-    ordering_fields = ['created_at', 'planned_start_date', 'priority']
+    ordering_fields = ['created_at', 'planned_start_date', 'priority', 'priority_order']
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -63,6 +66,32 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
             {'error': 'Invalid status'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    @action(detail=True, methods=['post'])
+    def update_priority_order(self, request, pk=None):
+        """更新任务优先级排序"""
+        order = self.get_object()
+        new_priority_order = request.data.get('priority_order')
+        
+        try:
+            new_priority_order = int(new_priority_order)
+            if new_priority_order < 0:
+                return Response(
+                    {'error': '优先级排序值不能小于0'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            order.priority_order = new_priority_order
+            order.save()
+            return Response({
+                'status': 'success',
+                'priority_order': new_priority_order
+            })
+        except (TypeError, ValueError):
+            return Response(
+                {'error': '无效的优先级排序值'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class ProductionStepViewSet(viewsets.ModelViewSet):

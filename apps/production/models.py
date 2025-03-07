@@ -85,6 +85,11 @@ class ProductionOrder(models.Model):
         choices=PRIORITY_CHOICES,
         default=2
     )
+    priority_order = models.IntegerField(
+        _('优先级排序'),
+        default=0,
+        help_text=_('数字越小优先级越高')
+    )
     status = models.CharField(
         _('状态'),
         max_length=20,
@@ -116,7 +121,7 @@ class ProductionOrder(models.Model):
     class Meta:
         verbose_name = _('生产任务')
         verbose_name_plural = _('生产任务')
-        ordering = ['-created_at']
+        ordering = ['priority_order', '-created_at']
 
     def __str__(self):
         product_name = self.product.name if self.product else "未关联产品"
