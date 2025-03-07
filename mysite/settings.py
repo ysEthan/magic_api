@@ -10,8 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 加载 .env 文件
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-tt8ymikd4a&lkign*z@_qke=snyj#@kgtrkjn8mk!tf7_4phwo'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -86,12 +91,12 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test',
-        'USER': 'root',
-        'PASSWORD': 'MJ7zTcy8$kzQJx5',
-        'HOST': 'rm-wz9fm83i33i818q0v0o.mysql.rds.aliyuncs.com',  # 通常是'localhost'，如果MySQL在本地运行
-        'PORT': '3306',  # 通常是3306
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -131,8 +136,8 @@ USE_TZ = False
 STATIC_URL = 'static/'
 # STATICFILES_DIRS = [BASE_DIR / 'static']
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, os.getenv('MEDIA_ROOT', 'media'))
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -177,18 +182,12 @@ SIMPLE_JWT = {
 }
 
 # 文件上传设置
-FILE_UPLOAD_PERMISSIONS = 0o644
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-
-# 文件上传配置
-FILE_UPLOAD_HANDLERS = [
-    'django.core.files.uploadhandler.MemoryFileUploadHandler',
-    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
-]
+FILE_UPLOAD_PERMISSIONS = int(os.getenv('FILE_UPLOAD_PERMISSIONS', '0o644'), 8)
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.getenv('FILE_UPLOAD_MAX_MEMORY_SIZE', '5242880'))
+MAX_UPLOAD_SIZE = int(os.getenv('MAX_UPLOAD_SIZE', '5242880'))
 
 # 允许上传的文件类型
-ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif']
-MAX_UPLOAD_SIZE = 5242880  # 5MB
+ALLOWED_IMAGE_TYPES = os.getenv('ALLOWED_IMAGE_TYPES', 'image/jpeg,image/png,image/gif').split(',')
 
 # 日志配置
 LOGGING = {
@@ -207,18 +206,18 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': os.getenv('LOG_FILE', 'debug.log'),
             'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
         },
-        'apps.products': {
+        'apps': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
             'propagate': True,
         },
     },
