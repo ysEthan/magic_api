@@ -14,6 +14,9 @@ git checkout -b b02_config
 git add . && git commit -m "config" && git push
 
 
+
+
+
 "03 用户认证============================="
 git checkout -b b03_user_auth
 git add . && git commit -m "user_auth" && git push
@@ -28,6 +31,23 @@ git add . && git commit -m "user_auth" && git push
 首先，让我们实现用户认证相关的功能
 
 
+
+
 "04 商品管理============================="
 git checkout -b b04_product
 git add . && git commit -m "b04_product" && git push
+我们已经完成了用户认证的部分，现在，让我们继续实现商品管理的部分
+请参考一下模型文件，创建模型
+
+完成视图和序列化器
+数据迁移
+更新API文档
+
+
+
+
+"05 生产管理============================="
+git checkout -b b05_production
+git add . && git commit -m "b05_production" && git push
+
+git add . && git commit -m "test" && git checkout b04_product && git branch -D b05_production
