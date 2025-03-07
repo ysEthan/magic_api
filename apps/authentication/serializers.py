@@ -4,7 +4,17 @@ from .models import User
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'phone', 'department', 'position', 'is_active')
+        fields = (
+            'id', 
+            'username', 
+            'email', 
+            'phone', 
+            'department', 
+            'position', 
+            'is_active',
+            'first_name',
+            'last_name'
+        )
         read_only_fields = ('id', 'is_active')
 
 class UserCreateSerializer(serializers.ModelSerializer):
