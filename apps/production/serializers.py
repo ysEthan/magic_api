@@ -44,6 +44,7 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
     comments = serializers.SerializerMethodField()
     product_info = serializers.SerializerMethodField(read_only=True)
     category_info = serializers.SerializerMethodField(read_only=True)
+    main_image_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ProductionOrder
@@ -51,7 +52,9 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'product': {'required': False, 'allow_null': True},
             'category': {'required': False, 'allow_null': True},
-            'priority_order': {'required': False}
+            'priority_order': {'required': False},
+            'main_image': {'required': False},
+            'attachments': {'required': False}
         }
 
     def get_comments(self, obj):
@@ -79,6 +82,19 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
                 'category_type_display': obj.category.get_category_type_display()
             }
         return None
+
+    def get_main_image_url(self, obj):
+        if obj.main_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.main_image.url)
+            return obj.main_image.url
+        return None
+
+    def validate_attachments(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError('附件必须是URL列表格式')
+        return value
 
     def validate(self, data):
         if data.get('category') and not data['category'].is_active:

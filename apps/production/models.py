@@ -117,6 +117,19 @@ class ProductionOrder(models.Model):
     )
     created_at = models.DateTimeField(_('创建时间'), auto_now_add=True)
     updated_at = models.DateTimeField(_('更新时间'), auto_now=True)
+    main_image = models.ImageField(
+        _('主图'),
+        upload_to='production/orders/%Y/%m',
+        null=True,
+        blank=True,
+        help_text=_('任务相关的主要图片')
+    )
+    attachments = models.JSONField(
+        _('附件列表'),
+        default=list,
+        blank=True,
+        help_text=_('任务相关的文件URL列表，如设计文件、参考图等')
+    )
 
     class Meta:
         verbose_name = _('生产任务')

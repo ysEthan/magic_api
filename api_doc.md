@@ -581,7 +581,12 @@
         "steps": ["生产步骤列表..."],
         "comments": ["评论列表..."],
         "created_at": "datetime",
-        "updated_at": "datetime"
+        "updated_at": "datetime",
+        "main_image": "string",  // 主图文件路径
+        "main_image_url": "string",  // 主图完整URL
+        "attachments": [  // 附件URL列表
+          "string"
+        ],
       }
     ]
   }
@@ -605,7 +610,11 @@
     "manager": "integer",
     "description": "string",
     "technical_requirements": "string",
-    "quality_requirements": "string"
+    "quality_requirements": "string",
+    "main_image": "file",  // 可选，主图文件
+    "attachments": [  // 可选，附件URL列表
+      "string"
+    ]
   }
   ```
 
