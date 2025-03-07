@@ -180,6 +180,16 @@ SIMPLE_JWT = {
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
+# 文件上传配置
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
+# 允许上传的文件类型
+ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif']
+MAX_UPLOAD_SIZE = 5242880  # 5MB
+
 # 日志配置
 LOGGING = {
     'version': 1,

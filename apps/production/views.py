@@ -8,6 +8,8 @@ from .serializers import (
     ProductionCategorySerializer, ProductionOrderSerializer,
     ProductionStepSerializer, ProductionCommentSerializer
 )
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.conf import settings
 
 
 class ProductionCategoryViewSet(viewsets.ModelViewSet):
@@ -46,12 +48,18 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
     queryset = ProductionOrder.objects.all()
     serializer_class = ProductionOrderSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
     filterset_class = ProductionOrderFilter
     search_fields = ['code', 'description']
     ordering_fields = ['created_at', 'planned_start_date', 'priority', 'priority_order']
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def get_serializer_context(self):
+        """添加request到上下文"""
+        context = super().get_serializer_context()
+        return context
 
     @action(detail=True, methods=['post'])
     def update_status(self, request, pk=None):
@@ -92,6 +100,36 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
                 {'error': '无效的优先级排序值'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=True, methods=['post'])
+    def upload_image(self, request, pk=None):
+        """上传主图"""
+        order = self.get_object()
+        if 'main_image' not in request.FILES:
+            return Response(
+                {'error': '请选择要上传的图片'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        file = request.FILES['main_image']
+        if file.content_type not in settings.ALLOWED_IMAGE_TYPES:
+            return Response(
+                {'error': '不支持的图片格式'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if file.size > settings.MAX_UPLOAD_SIZE:
+            return Response(
+                {'error': '图片大小超过限制'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order.main_image = file
+        order.save()
+        return Response({
+            'status': 'success',
+            'main_image_url': request.build_absolute_uri(order.main_image.url)
+        })
 
 
 class ProductionStepViewSet(viewsets.ModelViewSet):

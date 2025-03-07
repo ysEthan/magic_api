@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import ProductionCategory, ProductionOrder, ProductionStep, ProductionComment
 from apps.authentication.serializers import UserSerializer
+from django.conf import settings
 
 
 class ProductionCategorySerializer(serializers.ModelSerializer):
@@ -94,6 +95,14 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
     def validate_attachments(self, value):
         if not isinstance(value, list):
             raise serializers.ValidationError('附件必须是URL列表格式')
+        return value
+
+    def validate_main_image(self, value):
+        if value:
+            if value.size > settings.MAX_UPLOAD_SIZE:
+                raise serializers.ValidationError('图片大小超过限制')
+            if value.content_type not in settings.ALLOWED_IMAGE_TYPES:
+                raise serializers.ValidationError('不支持的图片格式')
         return value
 
     def validate(self, data):
