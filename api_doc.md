@@ -226,4 +226,75 @@ Authorization: Bearer <access_token>
       }
     ]
   }
-  ``` 
+  ```
+
+### 6. 生产报表 (Reports)
+
+#### 6.1 获取报表汇总数据
+- **接口**: `/api/production/reports/summary/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **响应**:
+  ```json
+  {
+    "total_orders": "integer",      // 任务总数
+    "completion_rate": "number",    // 完成率（百分比）
+    "total_planned": "integer",     // 计划生产总量
+    "total_completed": "integer",   // 实际完成总量
+    "status_distribution": {        // 状态分布
+      "pending": "integer",         // 待处理数量
+      "in_progress": "integer",     // 进行中数量
+      "completed": "integer",       // 已完成数量
+      "cancelled": "integer"        // 已取消数量
+    }
+  }
+  ```
+- **说明**:
+  - completion_rate: 完成率 = 已完成任务数 / 总任务数 * 100
+  - total_planned: 所有任务的计划生产数量之和
+  - total_completed: 已完成任务的实际生产数量之和
+
+#### 6.2 获取趋势数据
+- **接口**: `/api/production/reports/trend/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `type`: 趋势类型
+    - `daily`: 按日统计（默认）
+    - `weekly`: 按周统计
+    - `monthly`: 按月统计
+  - `start_date`: 开始日期 (YYYY-MM-DD)
+  - `end_date`: 结束日期 (YYYY-MM-DD)
+  - `category`: 可选的类目ID，用于筛选特定类目的数据
+- **响应**:
+  ```json
+  {
+    "dates": [                      // 日期列表
+      "2024-03-01",
+      "2024-03-02",
+      "2024-03-03"
+    ],
+    "new_orders": [                 // 新建任务数量列表
+      5,                           // 2024-03-01新建了5个任务
+      8,                           // 2024-03-02新建了8个任务
+      3                            // 2024-03-03新建了3个任务
+    ],
+    "completed_orders": [           // 完成任务数量列表
+      4,                           // 2024-03-01完成了4个任务
+      6,                           // 2024-03-02完成了6个任务
+      7                            // 2024-03-03完成了7个任务
+    ]
+  }
+  ```
+- **错误响应**:
+  ```json
+  {
+    "error": "无效的日期格式"      // 当日期格式不正确时
+  }
+  ```
+- **说明**:
+  - 日期范围内的每一天都会返回数据，如果某天没有数据则返回0
+  - 按周统计时，日期为每周的第一天
+  - 按月统计时，日期为每月的第一天
+  - 新建任务数：根据任务的创建时间统计
+  - 完成任务数：根据任务的完成时间（更新时间）统计 
