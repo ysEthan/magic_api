@@ -144,14 +144,38 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
             'code': next_code
         })
 
+    @action(detail=True, methods=['get'])
+    def current_step(self, request, pk=None):
+        """获取当前正在进行的步骤"""
+        order = self.get_object()
+        current_step = ProductionStep.objects.filter(
+            order=order,
+            status='in_progress'
+        ).order_by('sequence').first()
+        
+        if not current_step:
+            # 如果没有进行中的步骤，获取第一个待处理的步骤
+            current_step = ProductionStep.objects.filter(
+                order=order,
+                status='pending'
+            ).order_by('sequence').first()
+        
+        if current_step:
+            serializer = ProductionStepSerializer(current_step)
+            return Response(serializer.data)
+        
+        return Response({
+            'message': '没有正在进行或待处理的步骤'
+        })
+
 
 class ProductionStepViewSet(viewsets.ModelViewSet):
     """生产步骤视图集"""
     queryset = ProductionStep.objects.all()
     serializer_class = ProductionStepSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['order', 'step_type', 'status', 'operator']
-    search_fields = ['name', 'description']
+    filterset_fields = ['order', 'step_name', 'status', 'operator', 'contractor']
+    search_fields = ['description', 'contractor']
     ordering_fields = ['sequence', 'start_time', 'end_time']
 
     @action(detail=True, methods=['post'])
@@ -159,14 +183,31 @@ class ProductionStepViewSet(viewsets.ModelViewSet):
         """更新步骤状态"""
         step = self.get_object()
         new_status = request.data.get('status')
-        if new_status in dict(ProductionStep.STATUS_CHOICES):
-            step.status = new_status
-            step.save()
-            return Response({'status': 'success'})
-        return Response(
-            {'error': 'Invalid status'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        
+        if new_status not in dict(ProductionStep.STATUS_CHOICES):
+            return Response(
+                {'error': '无效的状态值'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # 记录原状态
+        old_status = step.status
+        
+        # 更新状态
+        step.status = new_status
+        
+        # 如果是完成状态，自动设置结束时间
+        if new_status == 'completed' and not step.end_time:
+            step.end_time = datetime.now()
+            
+        step.save()
+        
+        return Response({
+            'status': 'success',
+            'old_status': old_status,
+            'new_status': new_status,
+            'end_time': step.end_time
+        })
 
 
 class ProductionCommentViewSet(viewsets.ModelViewSet):

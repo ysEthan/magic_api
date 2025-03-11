@@ -185,15 +185,126 @@ Authorization: Bearer <access_token>
   }
   ```
 
+#### 2.7 获取当前进行中的步骤
+- **接口**: `/api/production/orders/{id}/current_step/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **响应**:
+  ```json
+  {
+    "id": "integer",
+    "order": "integer",
+    "step_name": "string",        // 步骤名称代码
+    "step_name_display": "string", // 步骤名称显示文本
+    "sequence": "integer",
+    "description": "string",
+    "contractor": "string",
+    "status": "string",           // 状态代码
+    "status_display": "string",    // 状态显示文本
+    "planned_duration": "string",
+    "actual_duration": "string",
+    "start_time": "datetime",
+    "end_time": "datetime",
+    "operator": "integer",
+    "operator_info": {
+      "id": "integer",
+      "username": "string",
+      "first_name": "string",
+      "last_name": "string"
+    },
+    "quality_check_result": "string",
+    "notes": "string",
+    "attachments": ["string"]
+  }
+  ```
+  或
+  ```json
+  {
+    "message": "没有正在进行或待处理的步骤"
+  }
+  ```
+- **说明**:
+  - 返回状态为"进行中"且序号最小的步骤
+  - 如果没有进行中的步骤，则返回第一个待处理的步骤
+  - 如果既没有进行中也没有待处理的步骤，则返回提示信息
+
 ### 3. 生产步骤管理 (Steps)
 #### 3.1 获取步骤列表
 - **接口**: `/api/production/steps/`
 - **方法**: `GET`
+- **权限**: 需要认证
 - **查询参数**:
   - `order`: 任务ID
-  - `step_type`: 步骤类型
+  - `step_name`: 步骤名称
+    - `3d_modeling`: 3D建模
+    - `model_printing`: 模型打印
+    - `casting`: 铸造
+    - `plating`: 电镀
+    - `post_processing`: 后处理
   - `status`: 状态
+    - `pending`: 待处理
+    - `in_progress`: 进行中
+    - `completed`: 已完成
+    - `on_hold`: 已暂停
   - `operator`: 操作员ID
+  - `contractor`: 承接方
+  - `search`: 搜索关键词（搜索描述、承接方）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order": "integer",
+        "step_name": "string",        // 步骤名称代码
+        "step_name_display": "string", // 步骤名称显示文本
+        "sequence": "integer",
+        "description": "string",
+        "contractor": "string",
+        "status": "string",           // 状态代码
+        "status_display": "string",    // 状态显示文本
+        "planned_duration": "string",
+        "actual_duration": "string",
+        "start_time": "datetime",
+        "end_time": "datetime",
+        "operator": "integer",
+        "operator_info": {
+          "id": "integer",
+          "username": "string",
+          "first_name": "string",
+          "last_name": "string"
+        },
+        "quality_check_result": "string",
+        "notes": "string",
+        "attachments": ["string"]
+      }
+    ]
+  }
+  ```
+
+#### 3.2 更新步骤状态
+- **接口**: `/api/production/steps/{id}/update_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "status": "string"  // pending/in_progress/completed/on_hold
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "status": "success",
+    "old_status": "string",
+    "new_status": "string",
+    "end_time": "datetime"
+  }
+  ```
+- **说明**:
+  - 当状态更新为 completed 时，会自动设置结束时间
+  - 状态只能在预定义的选项中选择
 
 ### 4. 生产评论管理 (Comments)
 #### 4.1 获取评论列表

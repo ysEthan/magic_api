@@ -12,13 +12,37 @@ class ProductionCategorySerializer(serializers.ModelSerializer):
 
 
 class ProductionStepSerializer(serializers.ModelSerializer):
-    step_type_display = serializers.CharField(source='get_step_type_display', read_only=True)
+    step_name_display = serializers.CharField(source='get_step_name_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     operator_info = UserSerializer(source='operator', read_only=True)
 
     class Meta:
         model = ProductionStep
         fields = '__all__'
+
+    def validate(self, data):
+        """验证步骤数据"""
+        # 验证序号是否重复
+        if self.instance is None:  # 创建新步骤时
+            order = data.get('order')
+            sequence = data.get('sequence')
+            if ProductionStep.objects.filter(
+                order=order, 
+                sequence=sequence
+            ).exists():
+                raise serializers.ValidationError({
+                    'sequence': '该序号在当前任务中已存在'
+                })
+        
+        # 验证开始时间小于结束时间
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        if start_time and end_time and start_time > end_time:
+            raise serializers.ValidationError({
+                'end_time': '结束时间不能早于开始时间'
+            })
+            
+        return data
 
 
 class ProductionCommentSerializer(serializers.ModelSerializer):

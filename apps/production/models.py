@@ -190,7 +190,7 @@ class ProductionOrder(models.Model):
 
 class ProductionStep(models.Model):
     """生产步骤"""
-    STEP_CHOICES = (
+    STEP_NAME_CHOICES = (
         ('3d_modeling', '3D建模'),
         ('model_printing', '模型打印'),
         ('casting', '铸造'),
@@ -211,15 +211,10 @@ class ProductionStep(models.Model):
         on_delete=models.CASCADE,
         related_name='steps'
     )
-    step_type = models.CharField(
-        _('步骤类型'),
-        max_length=20,
-        choices=STEP_CHOICES
-    )
-    name = models.CharField(
+    step_name = models.CharField(
         _('步骤名称'),
-        max_length=100,
-        help_text=_('可以是预定义步骤，也可以是自定义步骤名称')
+        max_length=20,
+        choices=STEP_NAME_CHOICES
     )
     sequence = models.IntegerField(_('步骤顺序'))
     description = models.TextField(_('步骤描述'), blank=True)
@@ -228,6 +223,13 @@ class ProductionStep(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending'
+    )
+    contractor = models.CharField(
+        _('承接方'), 
+        max_length=100, 
+        null=True, 
+        blank=True,
+        help_text=_('步骤的执行承接方，如外协厂商名称')
     )
     planned_duration = models.DurationField(_('计划耗时'))
     actual_duration = models.DurationField(_('实际耗时'), null=True, blank=True)
@@ -257,12 +259,7 @@ class ProductionStep(models.Model):
         unique_together = ['order', 'sequence']
 
     def __str__(self):
-        return f"{self.order.code} - {self.get_step_type_display() or self.name}"
-
-    def save(self, *args, **kwargs):
-        if self.step_type and not self.name:
-            self.name = self.get_step_type_display()
-        super().save(*args, **kwargs)
+        return f"{self.order.code} - {self.get_step_name_display()}"
 
 
 class ProductionComment(models.Model):
