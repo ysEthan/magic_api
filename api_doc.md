@@ -521,4 +521,53 @@ Authorization: Bearer <access_token>
   - 返回每个类目下不同优先级的任务数量分布
   - 支持按日期范围和任务状态筛选
   - priority_distribution 中的数值表示该优先级的任务数量
-  - 数据按类目名称排序 
+  - 数据按类目名称排序
+
+#### 6.5 获取渠道统计数据
+
+**接口地址**：`/api/production/reports/channel_statistics/`
+
+**请求方式**：`GET`
+
+**权限要求**：需要认证
+
+**查询参数**：
+- `status`：（可选）任务状态，可选值：pending、in_progress、completed、cancelled
+- `start_date`：（可选）开始日期，格式：YYYY-MM-DD
+- `end_date`：（可选）结束日期，格式：YYYY-MM-DD
+
+**响应格式**：
+```json
+{
+    "data": [
+        {
+            "channel_name": "渠道1",     // 渠道名称
+            "count": 10,                 // 该渠道的任务数量
+            "percentage": 25.0           // 该渠道任务占总数的百分比
+        },
+        {
+            "channel_name": "渠道2",
+            "count": 15,
+            "percentage": 37.5
+        }
+    ],
+    "total": 40                         // 总任务数
+}
+```
+
+**说明**：
+- 返回各个渠道的任务数量统计和占比
+- 数据按任务数量降序排序
+- 渠道为空的任务将归类为"未分类"
+- percentage 字段表示该渠道任务数占总任务数的百分比，精确到小数点后1位
+- total 字段表示统计周期内的总任务数
+
+**示例请求**：
+```http
+GET /api/production/reports/channel_statistics/?status=in_progress&start_date=2024-03-01&end_date=2024-03-31
+```
+
+**使用场景**：
+- 用于生成渠道分布饼图
+- 分析不同渠道的任务量分布
+- 监控各渠道的业务占比 

@@ -558,4 +558,62 @@ class ProductionReportViewSet(viewsets.ViewSet):
 
         return Response({
             'data': formatted_data
+        })
+
+    @action(detail=False, methods=['get'])
+    def channel_statistics(self, request):
+        """获取各渠道任务数量统计"""
+        # 获取查询参数
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        status = request.query_params.get('status')
+
+        # 构建基础查询
+        orders = ProductionOrder.objects.all()
+
+        # 应用日期过滤
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__gte=start_date)
+            except ValueError:
+                pass
+
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__lte=end_date)
+            except ValueError:
+                pass
+
+        # 应用状态过滤
+        if status:
+            orders = orders.filter(status=status)
+
+        # 获取总任务数
+        total_orders = orders.count()
+
+        # 按渠道分组统计任务数
+        channel_stats = orders.values(
+            'channel__name'  # 使用channel__name获取渠道名称
+        ).annotate(
+            count=Count('id')
+        ).order_by('-count')  # 按数量降序排序
+
+        # 格式化数据
+        formatted_data = []
+        for stat in channel_stats:
+            channel_name = stat['channel__name'] or '未分类'  # 处理channel为空的情况
+            count = stat['count']
+            percentage = round((count / total_orders * 100), 1) if total_orders > 0 else 0
+            
+            formatted_data.append({
+                'channel_name': channel_name,
+                'count': count,
+                'percentage': percentage
+            })
+
+        return Response({
+            'data': formatted_data,
+            'total': total_orders
         }) 
