@@ -174,7 +174,34 @@ Authorization: Bearer <access_token>
   }
   ```
 
-#### 2.3 上传任务主图
+#### 2.3 更新任务状态
+- **接口**: `/api/production/orders/{id}/update_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "status": "string"  // pending/in_progress/completed/cancelled
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "status": "success"
+  }
+  ```
+- **错误响应**:
+  ```json
+  {
+    "error": "Invalid status"
+  }
+  ```
+- **说明**:
+  - 状态只能在预定义的选项中选择
+  - 状态变更会记录在系统日志中
+  - 当状态更新为completed时，会自动记录完成时间
+
+#### 2.4 上传任务主图
 - **接口**: `/api/production/orders/{id}/upload_image/`
 - **方法**: `POST`
 - **Content-Type**: `multipart/form-data`
@@ -408,4 +435,90 @@ Authorization: Bearer <access_token>
   - 按周统计时，日期为每周的第一天
   - 按月统计时，日期为每月的第一天
   - 新建任务数：根据任务的创建时间统计
-  - 完成任务数：根据任务的完成时间（更新时间）统计 
+  - 完成任务数：根据任务的完成时间（更新时间）统计
+
+#### 6.3 获取步骤统计数据
+- **接口**: `/api/production/reports/step_statistics/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `status`: 可选，步骤状态过滤
+  - `category`: 可选，生产类目ID过滤
+  - `start_date`: 可选，开始日期 (YYYY-MM-DD)
+  - `end_date`: 可选，结束日期 (YYYY-MM-DD)
+- **响应**:
+  ```json
+  {
+    "data": [
+      {
+        "step_name": "模型打印",    // 步骤名称
+        "count": 12,               // 总任务数量
+        "percentage": 25.5,        // 百分比
+        "status_distribution": {    // 状态分布
+          "pending": 3,            // 待处理数量
+          "in_progress": 4,        // 进行中数量
+          "completed": 4,          // 已完成数量
+          "on_hold": 1            // 已暂停数量
+        }
+      },
+      {
+        "step_name": "3D建模",
+        "count": 18,
+        "percentage": 38.3,
+        "status_distribution": {
+          "pending": 5,
+          "in_progress": 8,
+          "completed": 3,
+          "on_hold": 2
+        }
+      }
+    ],
+    "total": 47  // 总任务数
+  }
+  ```
+- **说明**:
+  - percentage 为该步骤总任务数量占所有步骤总任务数量的百分比
+  - count 为该步骤的总任务数量（所有状态之和）
+  - status_distribution 显示该步骤中各状态的任务数量分布
+  - 支持按日期范围、状态和生产类目筛选
+  - 返回的数据按步骤名称排序
+  - step_name 返回的是步骤的显示名称而不是代码
+
+#### 6.4 获取类目优先级统计数据
+- **接口**: `/api/production/reports/category_priority_statistics/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `status`: 可选，任务状态过滤
+  - `start_date`: 可选，开始日期 (YYYY-MM-DD)
+  - `end_date`: 可选，结束日期 (YYYY-MM-DD)
+- **响应**:
+  ```json
+  {
+    "data": [
+      {
+        "category_name": "类目1",
+        "priority_distribution": {
+          "high": 10,    // 高优先级任务数
+          "medium": 20,  // 中优先级任务数
+          "normal": 30,  // 普通优先级任务数
+          "low": 15      // 低优先级任务数
+        }
+      },
+      {
+        "category_name": "类目2",
+        "priority_distribution": {
+          "high": 5,
+          "medium": 15,
+          "normal": 25,
+          "low": 10
+        }
+      }
+    ]
+  }
+  ```
+- **说明**:
+  - 返回每个类目下不同优先级的任务数量分布
+  - 支持按日期范围和任务状态筛选
+  - priority_distribution 中的数值表示该优先级的任务数量
+  - 数据按类目名称排序 

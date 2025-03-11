@@ -12,7 +12,7 @@ from .serializers import (
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.conf import settings
 from datetime import datetime, timedelta
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, F
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 
 
@@ -273,6 +273,106 @@ class ProductionReportViewSet(viewsets.ViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def step_statistics(self, request):
+        """获取按生产步骤统计的数据"""
+        # 获取查询参数
+        status = request.query_params.get('status')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        category = request.query_params.get('category')
+
+        # 构建基础查询
+        orders = ProductionOrder.objects.all()
+
+        # 应用日期过滤
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__gte=start_date)
+            except ValueError:
+                pass
+
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__lte=end_date)
+            except ValueError:
+                pass
+            
+        # 应用类目过滤
+        if category:
+            orders = orders.filter(category_id=category)
+
+        # 获取总订单数
+        total_orders = orders.count()
+
+        # 存储每个订单的当前步骤
+        order_current_steps = {}
+        
+        # 遍历所有订单获取当前步骤
+        for order in orders:
+            # 首先查找进行中的步骤
+            current_step = ProductionStep.objects.filter(
+                order=order,
+                status='in_progress'
+            ).order_by('sequence').first()
+            
+            # 如果没有进行中的步骤，查找待处理的步骤
+            if not current_step:
+                current_step = ProductionStep.objects.filter(
+                    order=order,
+                    status='pending'
+                ).order_by('sequence').first()
+            
+            if current_step:
+                order_current_steps[order.id] = current_step.step_name
+
+        # 统计每个步骤的订单数量
+        step_counts = {}
+        for step_name in dict(ProductionStep.STEP_NAME_CHOICES).keys():
+            count = sum(1 for step in order_current_steps.values() if step == step_name)
+            if count > 0:  # 只包含有订单的步骤
+                step_counts[step_name] = count
+
+        # 格式化数据
+        formatted_data = []
+        for step_name, count in step_counts.items():
+            step_name_display = dict(ProductionStep.STEP_NAME_CHOICES).get(step_name, step_name)
+            percentage = round((count / total_orders * 100), 1) if total_orders > 0 else 0
+            
+            # 获取该步骤的状态分布
+            status_distribution = ProductionStep.objects.filter(
+                order__in=orders,
+                step_name=step_name
+            ).values('status').annotate(
+                count=Count('id')
+            )
+
+            status_counts = {
+                'pending': 0,
+                'in_progress': 0,
+                'completed': 0,
+                'on_hold': 0
+            }
+            for item in status_distribution:
+                status_counts[item['status']] = item['count']
+            
+            formatted_data.append({
+                'step_name': step_name_display,
+                'count': count,
+                'percentage': percentage,
+                'status_distribution': status_counts
+            })
+
+        # 按数量降序排序
+        formatted_data.sort(key=lambda x: x['count'], reverse=True)
+
+        return Response({
+            'data': formatted_data,
+            'total': total_orders
+        })
+
+    @action(detail=False, methods=['get'])
     def trend(self, request):
         """获取趋势数据"""
         # 获取请求参数
@@ -352,4 +452,110 @@ class ProductionReportViewSet(viewsets.ViewSet):
             'dates': dates,
             'new_orders': new_orders_data,
             'completed_orders': completed_orders_data
+        })
+
+    @action(detail=False, methods=['get'])
+    def category_priority_statistics(self, request):
+        """获取各类目下不同优先级的任务数统计"""
+        # 获取查询参数
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        status = request.query_params.get('status')
+
+        # 构建基础查询
+        orders = ProductionOrder.objects.all()
+
+        # 应用日期过滤
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__gte=start_date)
+            except ValueError:
+                pass
+
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                orders = orders.filter(created_at__lte=end_date)
+            except ValueError:
+                pass
+
+        # 应用状态过滤
+        if status:
+            orders = orders.filter(status=status)
+
+        # 获取所有活跃的类目
+        categories = ProductionCategory.objects.filter(is_active=True)
+        
+        # 打印调试信息
+        print("Total orders:", orders.count())
+        print("Total categories:", categories.count())
+        
+        # 按类目和优先级分组统计
+        priority_stats = orders.values(
+            'category_id',
+            'category__name',
+            'priority'
+        ).annotate(
+            count=Count('id')
+        ).order_by('category_id', 'priority')
+        
+        # 打印原始统计数据
+        print("Raw priority stats:", list(priority_stats))
+
+        # 将统计数据转换为字典格式，方便查找
+        stats_dict = {}
+        for stat in priority_stats:
+            category_id = stat['category_id']
+            if category_id not in stats_dict:
+                stats_dict[category_id] = {
+                    'name': stat['category__name'],
+                    'priorities': {}
+                }
+            stats_dict[category_id]['priorities'][stat['priority']] = stat['count']
+        
+        # 打印处理后的统计字典
+        print("Processed stats dict:", stats_dict)
+
+        # 优先级映射关系
+        priority_mapping = {
+            0: 'P0',
+            1: 'P1',
+            2: 'P2',
+            3: 'P3'
+        }
+
+        # 格式化数据
+        formatted_data = []
+        for category in categories:
+            # 初始化优先级分布
+            priority_distribution = {
+                'P0': 0,
+                'P1': 0,
+                'P2': 0,
+                'P3': 0
+            }
+            
+            # 如果该类目有统计数据，更新优先级分布
+            if category.id in stats_dict:
+                category_stats = stats_dict[category.id]['priorities']
+                for priority_num, count in category_stats.items():
+                    priority_key = priority_mapping.get(priority_num, 'P0')  # 默认为 P0
+                    priority_distribution[priority_key] = count
+
+            # 只有当类目有任务时才添加到结果中
+            if any(count > 0 for count in priority_distribution.values()):
+                formatted_data.append({
+                    'category_name': category.name,
+                    'priority_distribution': priority_distribution
+                })
+
+        # 按类目名称排序
+        formatted_data.sort(key=lambda x: x['category_name'])
+        
+        # 打印最终格式化数据
+        print("Final formatted data:", formatted_data)
+
+        return Response({
+            'data': formatted_data
         }) 
