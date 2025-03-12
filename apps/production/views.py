@@ -60,6 +60,11 @@ class ProductionOrderViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def perform_update(self, serializer):
+        # 保持原有的 created_by
+        instance = serializer.instance
+        serializer.save(created_by=instance.created_by)
+
     def get_serializer_context(self):
         """添加request到上下文"""
         context = super().get_serializer_context()
@@ -563,57 +568,84 @@ class ProductionReportViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def channel_statistics(self, request):
         """获取各渠道任务数量统计"""
-        # 获取查询参数
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        status = request.query_params.get('status')
+        try:
+            # 获取查询参数
+            start_date = request.query_params.get('start_date')
+            end_date = request.query_params.get('end_date')
+            status = request.query_params.get('status')
 
-        # 构建基础查询
-        orders = ProductionOrder.objects.all()
-
-        # 应用日期过滤
-        if start_date:
-            try:
-                start_date = datetime.strptime(start_date, '%Y-%m-%d')
-                orders = orders.filter(created_at__gte=start_date)
-            except ValueError:
-                pass
-
-        if end_date:
-            try:
-                end_date = datetime.strptime(end_date, '%Y-%m-%d')
-                orders = orders.filter(created_at__lte=end_date)
-            except ValueError:
-                pass
-
-        # 应用状态过滤
-        if status:
-            orders = orders.filter(status=status)
-
-        # 获取总任务数
-        total_orders = orders.count()
-
-        # 按渠道分组统计任务数
-        channel_stats = orders.values(
-            'channel__name'  # 使用channel__name获取渠道名称
-        ).annotate(
-            count=Count('id')
-        ).order_by('-count')  # 按数量降序排序
-
-        # 格式化数据
-        formatted_data = []
-        for stat in channel_stats:
-            channel_name = stat['channel__name'] or '未分类'  # 处理channel为空的情况
-            count = stat['count']
-            percentage = round((count / total_orders * 100), 1) if total_orders > 0 else 0
+            # 构建基础查询
+            orders = ProductionOrder.objects.all()
             
-            formatted_data.append({
-                'channel_name': channel_name,
-                'count': count,
-                'percentage': percentage
-            })
+            print("Initial orders count:", orders.count())  # 调试日志
 
-        return Response({
-            'data': formatted_data,
-            'total': total_orders
-        }) 
+            # 应用日期过滤
+            if start_date:
+                try:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                    orders = orders.filter(created_at__gte=start_date)
+                    print(f"After start_date filter ({start_date}), orders count:", orders.count())
+                except ValueError as e:
+                    print(f"Invalid start_date format: {e}")
+                    return Response(
+                        {'error': f'无效的开始日期格式: {start_date}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            if end_date:
+                try:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                    orders = orders.filter(created_at__lte=end_date)
+                    print(f"After end_date filter ({end_date}), orders count:", orders.count())
+                except ValueError as e:
+                    print(f"Invalid end_date format: {e}")
+                    return Response(
+                        {'error': f'无效的结束日期格式: {end_date}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # 应用状态过滤
+            if status:
+                orders = orders.filter(status=status)
+                print(f"After status filter ({status}), orders count:", orders.count())
+
+            # 获取总任务数
+            total_orders = orders.count()
+            print("Total orders for statistics:", total_orders)
+
+            # 按渠道分组统计任务数
+            channel_stats = orders.values(
+                'channel',  # 添加channel ID
+                'channel__name'
+            ).annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            print("Raw channel stats:", list(channel_stats))  # 调试日志
+
+            # 格式化数据
+            formatted_data = []
+            for stat in channel_stats:
+                channel_name = stat['channel__name'] or '未分类'
+                count = stat['count']
+                percentage = round((count / total_orders * 100), 1) if total_orders > 0 else 0
+                
+                formatted_data.append({
+                    'channel_name': channel_name,
+                    'count': count,
+                    'percentage': percentage
+                })
+            
+            print("Formatted data:", formatted_data)  # 调试日志
+
+            return Response({
+                'data': formatted_data,
+                'total': total_orders
+            })
+            
+        except Exception as e:
+            print(f"Error in channel_statistics: {str(e)}")  # 错误日志
+            return Response(
+                {'error': f'获取渠道统计数据时发生错误: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 

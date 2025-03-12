@@ -72,6 +72,7 @@ class ProductionOrderSerializer(serializers.ModelSerializer):
     priority_display = serializers.CharField(source='get_priority_display', read_only=True)
     manager_info = UserSerializer(source='manager', read_only=True)
     created_by_info = UserSerializer(source='created_by', read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
     steps = ProductionStepSerializer(many=True, read_only=True)
     comments = serializers.SerializerMethodField()
     product_info = serializers.SerializerMethodField(read_only=True)
