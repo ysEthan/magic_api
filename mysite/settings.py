@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'apps.authentication.apps.AuthenticationConfig',
     'apps.products.apps.ProductsConfig',
     'apps.production.apps.ProductionConfig',
+    'apps.purchase.apps.PurchaseConfig',  # 使用完整的应用配置路径
+    'apps.storage.apps.StorageConfig',  # 添加库存管理应用
 ]
 
 MIDDLEWARE = [

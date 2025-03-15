@@ -1,3 +1,15 @@
+cd /code/magic/
+git clone https://github.com/ysEthan/magic_api.git
+cd /code/magic/magic_api
+git fetch origin && git checkout -b b06_production_step origin/b06_production_step
+
+mv -i .env.example .env
+
+
+docker ps -q | xargs docker stop && docker ps -a -q | xargs docker rm && docker images -q | xargs docker rmi -f
+
+
+
 "00 创建项目============================="
 django-admin startproject mysite && rename mysite magic_api
 --关联远程仓库
@@ -48,6 +60,47 @@ git add . && git commit -m "b04_product" && git push
 
 "05 生产管理============================="
 git checkout -b b05_production
-git add . && git commit -m "b05_production" && git push
+git add . && git commit -m "production" && git push
 
 git add . && git commit -m "test" && git checkout b04_product && git branch -D b05_production
+我们已经完成了商品管理模块，现在，让我们继续实现生产管理。
+生产分为试产和量产，每个生产任务有不同的环节，并且需要支持对生产任务进行评论
+请先建立生产任务/生产步骤/评论 三个模型，
+
+增加生产类目字段，包含树脂类/金属类/陶瓷类/毛绒类
+
+ProductionStep
+生产步骤字段，name可选 3D建模，模型打印，铸造，电镀，后处理
+
+
+接下来，我们需要创建序列化器和视图来处理这些模型的API接口。
+
+
+
+
+
+"06 生产管理 添加步骤============================="
+git checkout -b b06_production_step
+git add . && git commit -m "production_step" && git push
+
+接下来让我们完善生产步骤管理
+首先需要实现添加步骤的功能
+
+
+
+"07 采购管理 ============================="
+git checkout -b b07_procurement
+git add . && git commit -m "procurement" && git push
+
+我们已经完成了商品管理和生产管理的部分，接下来让我们继续完善采购管理。
+首先，请创建应用，然后参考以下模型文件，创建模型
+
+
+
+接下来让我们继续完善库存管理的部分
+首先，请创建应用，然后参考以下模型文件，创建模型
+
+
+
+接下来让我们继续完善订单管理的部分
+首先，请创建应用，然后参考以下模型文件，创建模型

@@ -24,4 +24,10 @@ urlpatterns = [
     path('api/auth/', include('apps.authentication.urls')),
     path('api/products/', include('apps.products.urls')),
     path('api/production/', include('apps.production.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)              
+    path('api/purchase/', include('apps.purchase.urls')),
+    path('api/storage/', include('apps.storage.urls')),
+]
+
+# 在开发环境中提供媒体文件服务
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)              

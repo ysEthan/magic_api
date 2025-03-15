@@ -1,8 +1,13 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters import rest_framework as filters
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import os
+from datetime import datetime
 from .models import Brand, Category, SPU, Product
 from .serializers import (
     BrandSerializer, CategorySerializer, SPUSerializer, ProductSerializer
@@ -101,4 +106,49 @@ class ProductViewSet(viewsets.ModelViewSet):
         product = self.get_object()
         product.is_reviewed = not product.is_reviewed
         product.save()
-        return Response({'status': 'success', 'is_reviewed': product.is_reviewed}) 
+        return Response({'status': 'success', 'is_reviewed': product.is_reviewed})
+
+    @action(detail=False, methods=['POST'], permission_classes=[AllowAny],
+            parser_classes=[MultiPartParser, FormParser])
+    def upload_image(self, request):
+        """上传商品图片（无需认证）"""
+        try:
+            image_file = request.FILES.get('image')
+            if not image_file:
+                return Response(
+                    {'error': '没有提供图片文件'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # 验证文件类型
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif']
+            if image_file.content_type not in allowed_types:
+                return Response(
+                    {'error': '不支持的文件类型，仅支持JPG、PNG和GIF'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # 验证文件大小（最大5MB）
+            if image_file.size > 5 * 1024 * 1024:
+                return Response(
+                    {'error': '文件大小超过限制（最大5MB）'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # 使用原始文件名保存
+            filename = f"products/images/{image_file.name}"
+            
+            # 保存文件
+            path = default_storage.save(filename, ContentFile(image_file.read()))
+            image_url = default_storage.url(path)
+
+            return Response({
+                'message': '图片上传成功',
+                'image_url': image_url
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response(
+                {'error': f'图片上传失败：{str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 

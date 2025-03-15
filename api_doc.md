@@ -142,6 +142,36 @@ Authorization: Bearer <access_token>
   - `is_active`: 是否启用
   - `search`: 搜索关键词
 
+#### 4.2 上传商品图片
+- **接口**: `/api/products/products/upload_image/`
+- **方法**: `POST`
+- **权限**: 无需认证
+- **Content-Type**: `multipart/form-data`
+- **请求参数**:
+  ```json
+  {
+    "image": "file"  // 图片文件
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "message": "图片上传成功",
+    "image_url": "string"  // 图片访问URL
+  }
+  ```
+- **错误响应**:
+  ```json
+  {
+    "error": "错误信息"  // 可能的错误：没有提供图片文件、不支持的文件类型、文件大小超限等
+  }
+  ```
+- **说明**:
+  - 支持的文件类型：JPG、PNG、GIF
+  - 文件大小限制：最大5MB
+  - 返回的image_url为图片的完整访问路径
+  - 图片将保存在 products/images/ 目录下，保持原始文件名
+
 ## 三、生产管理模块 (Production)
 
 ### 1. 生产类目管理 (Categories)
@@ -523,51 +553,177 @@ Authorization: Bearer <access_token>
   - priority_distribution 中的数值表示该优先级的任务数量
   - 数据按类目名称排序
 
-#### 6.5 获取渠道统计数据
+## 四、采购管理模块 (Purchase)
 
-**接口地址**：`/api/production/reports/channel_statistics/`
+### 1. 供应商管理 (Suppliers)
+#### 1.1 获取供应商列表
+- **接口**: `/api/purchase/suppliers/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `status`: 是否启用
+  - `name`: 供应商名称（模糊匹配）
+  - `contact_person`: 联系人（模糊匹配）
+  - `contact_phone`: 联系电话（模糊匹配）
+  - `search`: 搜索关键词（搜索名称、联系人、电话、地址）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "name": "string",
+        "contact_person": "string",
+        "contact_phone": "string",
+        "address": "string",
+        "email": "string",
+        "status": "boolean",
+        "remark": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
 
-**请求方式**：`GET`
-
-**权限要求**：需要认证
-
-**查询参数**：
-- `status`：（可选）任务状态，可选值：pending、in_progress、completed、cancelled
-- `start_date`：（可选）开始日期，格式：YYYY-MM-DD
-- `end_date`：（可选）结束日期，格式：YYYY-MM-DD
-
-**响应格式**：
-```json
-{
-    "data": [
-        {
-            "channel_name": "渠道1",     // 渠道名称
-            "count": 10,                 // 该渠道的任务数量
-            "percentage": 25.0           // 该渠道任务占总数的百分比
+### 2. 采购订单管理 (Orders)
+#### 2.1 获取订单列表
+- **接口**: `/api/purchase/orders/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `status`: 订单状态
+    - `draft`: 草稿
+    - `pending_order`: 待下单
+    - `submitted`: 已提交
+    - `approved`: 已审核
+    - `pending_payment`: 待支付
+    - `processing`: 处理中
+    - `pending_storage`: 待入库
+    - `completed`: 已完成
+    - `cancelled`: 已取消
+  - `supplier`: 供应商ID
+  - `purchaser`: 采购员ID
+  - `warehouse_id`: 仓库ID
+  - `min_order_time`: 最小下单时间
+  - `max_order_time`: 最大下单时间
+  - `min_total_amount`: 最小总金额
+  - `max_total_amount`: 最大总金额
+  - `search`: 搜索关键词（搜索订单编号、备注）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order_number": "string",
+        "order_time": "datetime",
+        "supplier": "integer",
+        "supplier_info": {
+          "id": "integer",
+          "name": "string",
+          "contact_person": "string",
+          "contact_phone": "string"
         },
-        {
-            "channel_name": "渠道2",
-            "count": 15,
-            "percentage": 37.5
-        }
-    ],
-    "total": 40                         // 总任务数
-}
-```
+        "purchaser": "integer",
+        "purchaser_info": {
+          "id": "integer",
+          "username": "string",
+          "first_name": "string",
+          "last_name": "string"
+        },
+        "warehouse_id": "integer",
+        "status": "string",
+        "status_display": "string",
+        "total_amount": "decimal",
+        "expected_delivery_date": "date",
+        "actual_delivery_date": "date",
+        "tracking_number": "string",
+        "remark": "string",
+        "items": [
+          {
+            "id": "integer",
+            "product": "integer",
+            "product_info": {
+              "id": "integer",
+              "name": "string",
+              "code": "string"
+            },
+            "quantity": "integer",
+            "unit_price": "decimal",
+            "total_price": "decimal",
+            "received_quantity": "integer",
+            "remark": "string"
+          }
+        ],
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
 
-**说明**：
-- 返回各个渠道的任务数量统计和占比
-- 数据按任务数量降序排序
-- 渠道为空的任务将归类为"未分类"
-- percentage 字段表示该渠道任务数占总任务数的百分比，精确到小数点后1位
-- total 字段表示统计周期内的总任务数
+#### 2.2 更新订单状态
+- **接口**: `/api/purchase/orders/{id}/update_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "status": "string"  // 状态代码
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "id": "integer",
+    "status": "string",
+    "status_display": "string",
+    "order_time": "datetime",      // 当状态为submitted时会更新
+    "actual_delivery_date": "date" // 当状态为completed时会更新
+  }
+  ```
+- **说明**:
+  - 当状态更新为 submitted 时，会自动设置下单时间
+  - 当状态更新为 completed 时，如果未设置实际交付日期，会自动设置为当前日期
 
-**示例请求**：
-```http
-GET /api/production/reports/channel_statistics/?status=in_progress&start_date=2024-03-01&end_date=2024-03-31
-```
-
-**使用场景**：
-- 用于生成渠道分布饼图
-- 分析不同渠道的任务量分布
-- 监控各渠道的业务占比 
+### 3. 采购订单明细管理 (Order Items)
+#### 3.1 获取订单明细列表
+- **接口**: `/api/purchase/order-items/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `purchase_order`: 订单ID
+  - `product`: 商品ID
+  - `search`: 搜索关键词（搜索备注）
+  - `order_id`: 通过订单ID过滤明细
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "purchase_order": "integer",
+        "product": "integer",
+        "product_info": {
+          "id": "integer",
+          "name": "string",
+          "code": "string"
+        },
+        "quantity": "integer",
+        "unit_price": "decimal",
+        "total_price": "decimal",
+        "received_quantity": "integer",
+        "remark": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+- **说明**:
+  - total_price 字段为只读，由系统根据 quantity 和 unit_price 自动计算
+  - 创建或更新订单明细时会自动更新订单的总金额 
