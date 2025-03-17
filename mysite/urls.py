@@ -26,6 +26,8 @@ urlpatterns = [
     path('api/production/', include('apps.production.urls')),
     path('api/purchase/', include('apps.purchase.urls')),
     path('api/storage/', include('apps.storage.urls')),
+    path('api/trade/', include('apps.trade.urls')),
+    path('api/logistics/', include('apps.logistics.urls')),
 ]
 
 # 在开发环境中提供媒体文件服务

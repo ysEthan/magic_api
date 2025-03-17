@@ -727,3 +727,484 @@ Authorization: Bearer <access_token>
 - **说明**:
   - total_price 字段为只读，由系统根据 quantity 和 unit_price 自动计算
   - 创建或更新订单明细时会自动更新订单的总金额 
+
+## 五、订单管理模块 (Trade)
+
+### 1. 店铺管理 (Shops)
+#### 1.1 获取店铺列表
+- **接口**: `/api/trade/shops/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `name`: 店铺名称（模糊匹配）
+  - `platform`: 平台类型
+    - `shopify`: Shopify
+    - `shopline`: Shopline
+    - `tiktok`: Tik Tok
+    - `etsy`: Etsy
+    - `offline`: 线下订单
+  - `status`: 状态（1: 正常, 0: 停用）
+  - `search`: 搜索关键词（搜索名称、编号、描述）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "name": "string",
+        "platform": "string",
+        "platform_display": "string",
+        "shop_code": "string",
+        "manager": "integer",
+        "manager_info": {
+          "id": "integer",
+          "username": "string",
+          "email": "string"
+        },
+        "status": "integer",
+        "status_display": "string",
+        "description": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### 1.2 切换店铺状态
+- **接口**: `/api/trade/shops/{id}/toggle_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **响应**:
+  ```json
+  {
+    "status": "integer",
+    "message": "店铺状态已更新"
+  }
+  ```
+
+### 2. 订单管理 (Orders)
+#### 2.1 获取订单列表
+- **接口**: `/api/trade/orders/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `order_number`: 订单编号（模糊匹配）
+  - `platform_order_number`: 平台订单号（模糊匹配）
+  - `status`: 订单状态
+    - `unpaid`: 未支付
+    - `pending`: 待处理
+    - `picking`: 配货中
+    - `shipped`: 已发货
+    - `cancelled`: 已取消
+  - `order_type`: 订单类型
+    - `platform`: 平台订单
+    - `influencer`: 达人订单
+    - `offline`: 线下订单
+    - `requisition`: 员工领用
+    - `employee`: 员工自购
+  - `shop`: 店铺ID
+  - `payment_status`: 支付状态（true/false）
+  - `created_at`: 创建时间范围
+  - `order_place_time`: 下单时间范围
+  - `payment_time`: 支付时间范围
+  - `total_amount`: 订单金额范围
+  - `shipping_contact`: 收货人（模糊匹配）
+  - `shipping_phone`: 联系电话（模糊匹配）
+  - `search`: 搜索关键词（搜索订单号、收货人、电话、地址）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order_number": "string",
+        "platform_order_number": "string",
+        "order_type": "string",
+        "order_type_display": "string",
+        "exchange_rate_to_usd": "decimal",
+        "package_id": "string",
+        "shop": "integer",
+        "shop_info": {
+          "id": "integer",
+          "name": "string",
+          "platform": "string",
+          "platform_display": "string"
+        },
+        "status": "string",
+        "status_display": "string",
+        "total_amount": "decimal",
+        "currency": "string",
+        "shipping_fee": "decimal",
+        "payment_method": "string",
+        "payment_method_display": "string",
+        "payment_status": "boolean",
+        "payment_time": "datetime",
+        "order_place_time": "datetime",
+        "shipping_address": "string",
+        "shipping_contact": "string",
+        "shipping_phone": "string",
+        "postal_code": "string",
+        "country": "string",
+        "state": "string",
+        "city": "string",
+        "district": "string",
+        "system_remark": "string",
+        "cs_remark": "string",
+        "buyer_remark": "string",
+        "items": [
+          {
+            "id": "integer",
+            "product": "integer",
+            "product_info": {
+              "id": "integer",
+              "name": "string",
+              "code": "string"
+            },
+            "quantity": "integer",
+            "unit_price": "decimal",
+            "discount": "decimal",
+            "total_price": "decimal",
+            "remark": "string"
+          }
+        ],
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### 2.2 创建订单
+- **接口**: `/api/trade/orders/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "order_number": "string",
+    "platform_order_number": "string",
+    "order_type": "string",
+    "exchange_rate_to_usd": "decimal",
+    "package_id": "string",
+    "shop": "integer",
+    "status": "string",
+    "total_amount": "decimal",
+    "currency": "string",
+    "shipping_fee": "decimal",
+    "payment_method": "string",
+    "payment_status": "boolean",
+    "payment_time": "datetime",
+    "order_place_time": "datetime",
+    "shipping_address": "string",
+    "shipping_contact": "string",
+    "shipping_phone": "string",
+    "postal_code": "string",
+    "country": "string",
+    "state": "string",
+    "city": "string",
+    "district": "string",
+    "system_remark": "string",
+    "cs_remark": "string",
+    "buyer_remark": "string",
+    "items": [
+      {
+        "product": "integer",
+        "quantity": "integer",
+        "unit_price": "decimal",
+        "discount": "decimal",
+        "remark": "string"
+      }
+    ]
+  }
+  ```
+
+#### 2.3 更新订单状态
+- **接口**: `/api/trade/orders/{id}/update_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "status": "string"  // unpaid/pending/picking/shipped/cancelled
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "status": "string",
+    "message": "订单状态已更新"
+  }
+  ```
+
+#### 2.4 更新支付状态
+- **接口**: `/api/trade/orders/{id}/update_payment/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "payment_status": "boolean"
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "payment_status": "boolean",
+    "payment_time": "datetime",
+    "message": "支付状态已更新"
+  }
+  ```
+
+### 3. 订单商品管理 (Order Items)
+#### 3.1 获取订单商品列表
+- **接口**: `/api/trade/order-items/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `order`: 订单ID
+  - `product`: 商品ID
+  - `search`: 搜索关键词（搜索备注）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order": "integer",
+        "product": "integer",
+        "product_info": {
+          "id": "integer",
+          "name": "string",
+          "code": "string"
+        },
+        "quantity": "integer",
+        "unit_price": "decimal",
+        "discount": "decimal",
+        "total_price": "decimal",
+        "remark": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+- **说明**:
+  - total_price 字段为只读，由系统根据 quantity、unit_price 和 discount 自动计算
+  - 创建或更新订单商品时会自动更新订单的总金额
+  
+## 六、物流管理模块 (Logistics)
+
+### 1. 物流商管理 (Carriers)
+#### 1.1 获取物流商列表
+- **接口**: `/api/logistics/carriers/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `name`: 中文名称（模糊匹配）
+  - `code`: 物流商代码（模糊匹配）
+  - `contact`: 联系电话（模糊匹配）
+  - `created_at`: 创建时间范围
+  - `search`: 搜索关键词（搜索中文名、英文名、代码、联系电话）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "name_zh": "string",
+        "name_en": "string",
+        "code": "string",
+        "url": "string",
+        "contact": "string",
+        "query_key": "integer",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+
+### 2. 物流服务管理 (Services)
+#### 2.1 获取服务列表
+- **接口**: `/api/logistics/services/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `carrier`: 物流商ID
+  - `carrier_name`: 物流商名称（模糊匹配）
+  - `service_name`: 服务名称（模糊匹配）
+  - `service_code`: 服务代码（模糊匹配）
+  - `service_type`: 服务类型
+  - `created_at`: 创建时间范围
+  - `search`: 搜索关键词（搜索服务名称、代码、物流商名称）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "carrier": "integer",
+        "carrier_name": "string",
+        "service_name": "string",
+        "service_code": "string",
+        "service_type": "integer",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+
+### 3. 包裹管理 (Packages)
+#### 3.1 获取包裹列表
+- **接口**: `/api/logistics/packages/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `order`: 订单ID
+  - `order_number`: 订单编号（模糊匹配）
+  - `warehouse`: 仓库ID
+  - `warehouse_name`: 仓库名称（模糊匹配）
+  - `tracking_no`: 跟踪号（模糊匹配）
+  - `pkg_status_code`: 包裹状态码
+    - `0`: 待发货
+    - `1`: 待揽收
+    - `2`: 转运中
+    - `3`: 已签收
+    - `4`: 已取消
+  - `service`: 物流服务ID
+  - `carrier`: 物流商ID
+  - `carrier_name`: 物流商名称（模糊匹配）
+  - `created_at`: 创建时间范围
+  - `estimated_cost_min`: 最小预估费用
+  - `estimated_cost_max`: 最大预估费用
+  - `search`: 搜索关键词（搜索跟踪号、订单编号）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order": "integer",
+        "order_info": {
+          "order_number": "string",
+          "shop_name": "string",
+          "total_amount": "string",
+          "status": "string"
+        },
+        "warehouse": "integer",
+        "warehouse_name": "string",
+        "tracking_no": "string",
+        "pkg_status_code": "string",
+        "service": "integer",
+        "carrier_name": "string",
+        "service_name": "string",
+        "items": "json",
+        "length": "decimal",
+        "width": "decimal",
+        "height": "decimal",
+        "weight": "decimal",
+        "volume": "decimal",
+        "volume_weight": "decimal",
+        "estimated_logistics_cost": "decimal",
+        "carrier_cost": "decimal",
+        "tracking_records": [
+          {
+            "id": "integer",
+            "status": "integer",
+            "status_display": "string",
+            "location": "string",
+            "description": "string",
+            "operator": "integer",
+            "operator_name": "string",
+            "tracking_time": "datetime",
+            "created_at": "datetime",
+            "updated_at": "datetime"
+          }
+        ],
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+
+#### 3.2 更新包裹状态
+- **接口**: `/api/logistics/packages/{id}/update_status/`
+- **方法**: `POST`
+- **权限**: 需要认证
+- **请求参数**:
+  ```json
+  {
+    "status": "string",     // 新状态码
+    "location": "string",   // 当前位置
+    "description": "string" // 状态描述
+  }
+  ```
+- **响应**: 返回更新后的包裹完整信息
+- **说明**:
+  - 状态变更规则：
+    - 待发货(0) -> 待揽收(1)/已取消(4)
+    - 待揽收(1) -> 转运中(2)/已取消(4)
+    - 转运中(2) -> 已签收(3)/已取消(4)
+    - 已签收(3) -> 不可变更
+    - 已取消(4) -> 不可变更
+  - 状态变更时会自动创建物流轨迹记录
+  - 操作人会自动设置为当前登录用户
+
+### 4. 物流轨迹管理 (Tracking)
+#### 4.1 获取轨迹列表
+- **接口**: `/api/logistics/tracking/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `package`: 包裹ID
+  - `tracking_no`: 跟踪号（模糊匹配）
+  - `status`: 物流状态
+  - `location`: 当前位置（模糊匹配）
+  - `operator`: 操作人ID
+  - `operator_name`: 操作人用户名（模糊匹配）
+  - `tracking_time`: 轨迹时间范围
+  - `created_at`: 创建时间范围
+  - `package_id`: 通过包裹ID过滤轨迹记录
+  - `search`: 搜索关键词（搜索位置、描述、跟踪号）
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "package": "integer",
+        "status": "integer",
+        "status_display": "string",
+        "location": "string",
+        "description": "string",
+        "operator": "integer",
+        "operator_name": "string",
+        "tracking_time": "datetime",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+- **说明**:
+  - status 对应的状态码：
+    - 0: 待发货
+    - 1: 待揽收
+    - 2: 转运中
+    - 3: 已签收
+    - 4: 已取消
+  - tracking_time 表示物流状态发生的实际时间
+  - operator 为记录创建人，自动设置为当前登录用户
+  - 支持按包裹ID过滤轨迹记录
+  - 默认按轨迹时间倒序排序
+  

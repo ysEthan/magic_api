@@ -1,7 +1,7 @@
 cd /code/magic/
 git clone https://github.com/ysEthan/magic_api.git
 cd /code/magic/magic_api
-git fetch origin && git checkout -b b06_production_step origin/b06_production_step
+git fetch origin && git checkout -b b07_procurement origin/b07_procurement
 
 mv -i .env.example .env
 
@@ -90,7 +90,7 @@ git add . && git commit -m "production_step" && git push
 
 "07 采购管理 ============================="
 git checkout -b b07_procurement
-git add . && git commit -m "procurement" && git push
+git add . && git commit -m "procurement & storage" && git push
 
 我们已经完成了商品管理和生产管理的部分，接下来让我们继续完善采购管理。
 首先，请创建应用，然后参考以下模型文件，创建模型

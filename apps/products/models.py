@@ -199,7 +199,7 @@ class Product(models.Model):
     height = models.IntegerField(_('高(mm)'), null=True, blank=True)
     other_dimensions = models.CharField(
         _('其他尺寸'),
-        max_length=25,
+        max_length=100,
         null=True,
         blank=True
     )

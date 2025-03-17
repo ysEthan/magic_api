@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'apps.production.apps.ProductionConfig',
     'apps.purchase.apps.PurchaseConfig',  # 使用完整的应用配置路径
     'apps.storage.apps.StorageConfig',  # 添加库存管理应用
+    'apps.trade.apps.TradeConfig',  # 添加订单管理应用
+    'apps.logistics.apps.LogisticsConfig',  # 添加物流管理应用
 ]
 
 MIDDLEWARE = [
@@ -99,6 +101,13 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+            'connect_timeout': 60,
+            'autocommit': True,
+        },
+        'CONN_MAX_AGE': 60,
     }
 }
 
