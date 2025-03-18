@@ -139,19 +139,12 @@ class ProductViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # 使用原始文件名保存到products目录
-            logger.info("=== Image Upload Info ===")
-            logger.info(f"Original filename: {image_file.name}")
-            path = default_storage.save(image_file.name, ContentFile(image_file.read()))
-            logger.info(f"Saved path: {path}")
-            image_url = default_storage.url(path)
-            logger.info(f"Image URL: {image_url}")
-            logger.info(f"Full file path: {os.path.join(settings.MEDIA_ROOT, path)}")
-            logger.info("==========================")
-
+            # 保存文件到products目录
+            path = default_storage.save(os.path.join('products', image_file.name), ContentFile(image_file.read()))
+            
             return Response({
                 'message': '图片上传成功',
-                'image_url': image_url
+                'image_url': default_storage.url(path)
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
