@@ -7,12 +7,15 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import os
+import logging
 from datetime import datetime
 from .models import Brand, Category, SPU, Product
 from .serializers import (
     BrandSerializer, CategorySerializer, SPUSerializer, ProductSerializer
 )
 from django.conf import settings
+
+logger = logging.getLogger('apps')
 
 
 class BrandViewSet(viewsets.ModelViewSet):
@@ -137,13 +140,13 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
 
             # 使用原始文件名保存到products目录
-            print(f"Original filename: {image_file.name}")
+            logger.info(f"Original filename: {image_file.name}")
             path = default_storage.save(image_file.name, ContentFile(image_file.read()))
-            print(f"Saved path: {path}")
+            logger.info(f"Saved path: {path}")
             image_url = default_storage.url(path)
-            print(f"Image URL: {image_url}")
-            print(f"Full file path: {os.path.join(settings.MEDIA_ROOT, path)}")
-            print("==========================")
+            logger.info(f"Image URL: {image_url}")
+            logger.info(f"Full file path: {os.path.join(settings.MEDIA_ROOT, path)}")
+            logger.info("==========================")
 
             return Response({
                 'message': '图片上传成功',
