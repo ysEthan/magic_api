@@ -14,16 +14,33 @@ class SupplierSerializer(serializers.ModelSerializer):
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     """采购订单明细序列化器"""
     product_info = ProductSerializer(source='product', read_only=True)
+    supplier_id = serializers.IntegerField(read_only=True)
+    supplier_name = serializers.CharField(read_only=True)
+    order_number = serializers.CharField(read_only=True)
+    expected_date = serializers.DateField(read_only=True)
+    pending_quantity = serializers.IntegerField(read_only=True)
+    product_image = serializers.SerializerMethodField()
     
     class Meta:
         model = PurchaseOrderItem
         fields = [
             'id', 'purchase_order', 'product', 'product_info',
             'quantity', 'unit_price', 'total_price',
-            'received_quantity', 'remark',
+            'received_quantity', 'pending_quantity',
+            'supplier_id', 'supplier_name', 'order_number',
+            'expected_date', 'remark', 'product_image',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['total_price']
+        read_only_fields = ['total_price', 'pending_quantity', 'product_image']
+        
+    def get_product_image(self, obj):
+        """获取商品图片"""
+        if obj.product and obj.product.main_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.product.main_image.url)
+            return obj.product.main_image.url
+        return None
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):

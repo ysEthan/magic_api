@@ -115,4 +115,9 @@ git add . && git commit -m "order & logistics" && git push
 接下来让我们继续完善物流管理的部分
 首先，请创建应用，然后参考以下模型文件，创建模型
 
-关联订单
+
+
+
+"07 采购管理 优化 ============================="
+git checkout -b b08_procurement
+git add . && git commit -m "order & logistics" && git push

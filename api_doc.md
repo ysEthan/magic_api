@@ -728,6 +728,69 @@ Authorization: Bearer <access_token>
   - total_price 字段为只读，由系统根据 quantity 和 unit_price 自动计算
   - 创建或更新订单明细时会自动更新订单的总金额 
 
+### 4. 待入库采购单明细
+#### 4.1 获取待入库采购单明细列表
+- **接口**: `/api/purchase/order-items/pending-storage/`
+- **方法**: `GET`
+- **权限**: 需要认证
+- **查询参数**:
+  - `order_number`: 采购单号（模糊匹配）
+  - `supplier`: 供应商ID
+  - `supplier_name`: 供应商名称（模糊匹配）
+  - `product`: 商品ID
+  - `product_name`: 商品名称（模糊匹配）
+  - `sku`: SKU编码（模糊匹配）
+  - `status`: 入库状态
+    - `pending`: 待入库
+    - `partial`: 部分入库
+  - `expected_date_start`: 预计到货日期开始
+  - `expected_date_end`: 预计到货日期结束
+  - `created_at_start`: 创建时间开始
+  - `created_at_end`: 创建时间结束
+  - `search`: 搜索关键词（搜索订单号、供应商名称、商品名称、SKU）
+  - `ordering`: 排序字段
+    - `expected_date`: 按预计到货日期排序
+    - `-expected_date`: 按预计到货日期倒序
+    - `created_at`: 按创建时间排序
+    - `-created_at`: 按创建时间倒序
+- **响应**:
+  ```json
+  {
+    "count": "integer",
+    "results": [
+      {
+        "id": "integer",
+        "order_id": "integer",
+        "order_number": "string",
+        "supplier_id": "integer",
+        "supplier_name": "string",
+        "product_id": "integer",
+        "product_name": "string",
+        "product_image": "string",
+        "sku": "string",
+        "ordered_quantity": "integer",
+        "received_quantity": "integer",
+        "pending_quantity": "integer",
+        "unit_price": "decimal",
+        "total_amount": "decimal",
+        "expected_date": "date",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  }
+  ```
+- **说明**:
+  - status 状态说明：
+    - `pending`: 待入库（received_quantity = 0）
+    - `partial`: 部分入库（0 < received_quantity < ordered_quantity）
+  - pending_quantity = ordered_quantity - received_quantity
+  - total_amount = ordered_quantity * unit_price
+  - product_image: 商品图片的完整访问URL，如果商品没有图片则为null
+  - 默认按预计到货日期升序排序
+  - 支持分页，默认每页1000条记录，可通过 page_size 参数调整（最大10000条）
+
 ## 五、订单管理模块 (Trade)
 
 ### 1. 店铺管理 (Shops)

@@ -174,6 +174,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    'MAX_PAGE_SIZE': 1000,  # 添加最大页面大小限制
 }
 
 # 自定义用户模型

@@ -2,7 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as filters
+from django.db.models import F
+from django.db import connection
 from .models import Supplier, PurchaseOrder, PurchaseOrderItem
 from .serializers import (
     SupplierSerializer, PurchaseOrderSerializer,
@@ -89,6 +92,13 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class LargeResultsSetPagination(PageNumberPagination):
+    """大数据集分页器"""
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 10000
+
+
 class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
     """采购订单明细视图集"""
     queryset = PurchaseOrderItem.objects.all()
@@ -97,6 +107,7 @@ class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
     filterset_fields = ['purchase_order', 'product']
     search_fields = ['remark']
     ordering_fields = ['created_at', 'quantity', 'unit_price', 'total_price']
+    pagination_class = LargeResultsSetPagination  # 使用自定义分页器
 
     def get_queryset(self):
         """可以通过订单ID过滤明细"""
@@ -104,4 +115,80 @@ class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
         order_id = self.request.query_params.get('order_id')
         if order_id:
             queryset = queryset.filter(purchase_order_id=order_id)
-        return queryset 
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='pending-storage', url_name='pending-storage')
+    def pending_storage(self, request):
+        """获取待入库的采购订单明细列表"""
+        # 1. 首先获取待入库状态的订单
+        pending_orders = PurchaseOrder.objects.filter(status='pending_storage')
+        
+        # 2. 基于这些订单获取订单明细
+        queryset = self.get_queryset().filter(
+            purchase_order__in=pending_orders,
+            received_quantity__lt=F('quantity')
+        ).annotate(
+            pending_quantity=F('quantity') - F('received_quantity'),
+            supplier_id=F('purchase_order__supplier__id'),
+            supplier_name=F('purchase_order__supplier__name'),
+            order_number=F('purchase_order__order_number'),
+            expected_date=F('purchase_order__expected_delivery_date')
+        ).select_related(
+            'purchase_order',
+            'purchase_order__supplier',
+            'product'
+        )
+
+        # 应用过滤
+        order_number = request.query_params.get('order_number')
+        if order_number:
+            queryset = queryset.filter(purchase_order__order_number__icontains=order_number)
+        
+        supplier = request.query_params.get('supplier')
+        if supplier:
+            queryset = queryset.filter(purchase_order__supplier__id=supplier)
+        
+        supplier_name = request.query_params.get('supplier_name')
+        if supplier_name:
+            queryset = queryset.filter(purchase_order__supplier__name__icontains=supplier_name)
+        
+        product = request.query_params.get('product')
+        if product:
+            queryset = queryset.filter(product__id=product)
+        
+        product_name = request.query_params.get('product_name')
+        if product_name:
+            queryset = queryset.filter(product__name__icontains=product_name)
+        
+        sku = request.query_params.get('sku')
+        if sku:
+            queryset = queryset.filter(product__sku__icontains=sku)
+        
+        expected_date_start = request.query_params.get('expected_date_start')
+        if expected_date_start:
+            queryset = queryset.filter(purchase_order__expected_delivery_date__gte=expected_date_start)
+        
+        expected_date_end = request.query_params.get('expected_date_end')
+        if expected_date_end:
+            queryset = queryset.filter(purchase_order__expected_delivery_date__lte=expected_date_end)
+
+        # 排序
+        ordering = request.query_params.get('ordering', '-expected_date')
+        if ordering:
+            queryset = queryset.order_by(ordering)
+
+        # 打印SQL查询
+        queries = connection.queries
+        print("SQL查询:")
+        for query in queries:
+            print(query['sql'])
+        print(f"查询结果数量: {queryset.count()}")
+
+        # 分页
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data) 
