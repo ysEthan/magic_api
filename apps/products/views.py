@@ -12,6 +12,7 @@ from .models import Brand, Category, SPU, Product
 from .serializers import (
     BrandSerializer, CategorySerializer, SPUSerializer, ProductSerializer
 )
+from django.conf import settings
 
 
 class BrandViewSet(viewsets.ModelViewSet):
@@ -136,8 +137,13 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
 
             # 使用原始文件名保存到products目录
-            path = default_storage.save(os.path.join('products', image_file.name), ContentFile(image_file.read()))
+            print(f"Original filename: {image_file.name}")
+            path = default_storage.save(image_file.name, ContentFile(image_file.read()))
+            print(f"Saved path: {path}")
             image_url = default_storage.url(path)
+            print(f"Image URL: {image_url}")
+            print(f"Full file path: {os.path.join(settings.MEDIA_ROOT, path)}")
+            print("==========================")
 
             return Response({
                 'message': '图片上传成功',
