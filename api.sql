@@ -90,7 +90,7 @@ git add . && git commit -m "production_step" && git push
 
 "07 采购管理 ============================="
 git checkout -b b07_procurement
-git add . && git commit -m "procurement & storage" && git push
+git add . && git commit -m "order & logistics" && git push
 
 我们已经完成了商品管理和生产管理的部分，接下来让我们继续完善采购管理。
 首先，请创建应用，然后参考以下模型文件，创建模型
@@ -104,3 +104,15 @@ git add . && git commit -m "procurement & storage" && git push
 
 接下来让我们继续完善订单管理的部分
 首先，请创建应用，然后参考以下模型文件，创建模型
+
+创建数据库迁移文件
+实现序列化器（Serializers）
+创建视图（Views）
+配置URL路由
+
+
+
+接下来让我们继续完善物流管理的部分
+首先，请创建应用，然后参考以下模型文件，创建模型
+
+关联订单
