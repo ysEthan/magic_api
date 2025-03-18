@@ -15,7 +15,7 @@ from .serializers import (
 )
 from django.conf import settings
 
-logger = logging.getLogger('apps')
+logger = logging.getLogger('django')
 
 
 class BrandViewSet(viewsets.ModelViewSet):
@@ -140,6 +140,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 )
 
             # 使用原始文件名保存到products目录
+            logger.info("=== Image Upload Info ===")
             logger.info(f"Original filename: {image_file.name}")
             path = default_storage.save(image_file.name, ContentFile(image_file.read()))
             logger.info(f"Saved path: {path}")
