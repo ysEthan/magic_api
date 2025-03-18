@@ -137,10 +137,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
             # 使用原始文件名保存到products目录
             path = default_storage.save(os.path.join('products', image_file.name), ContentFile(image_file.read()))
-            print(path) 
             image_url = default_storage.url(path)
-            print(image_url)    
-            print('===========================')
 
             return Response({
                 'message': '图片上传成功',
