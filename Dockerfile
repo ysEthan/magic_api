@@ -31,7 +31,7 @@ COPY .env.example /app/.env.example
 
 # 创建启动脚本
 COPY <<'EOF' /docker-entrypoint.sh
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # 如果没有 .env 文件，使用 .env.example
@@ -44,21 +44,22 @@ fi
 export PYTHONUNBUFFERED=1
 export DJANGO_SETTINGS_MODULE=mysite.settings
 
-# 加载环境变量
-# while IFS='=' read -r key value; do
-#     # 忽略注释和空行
-#     if [[ ! $key =~ ^#.*$ ]] && [[ -n $key ]]; then
-#         # 移除可能的引号和空格
-#         value=$(echo "$value" | tr -d '"' | tr -d "'")
-#         export "$key=$value"
-#     fi
-# done < /app/.env
+# 直接导出 .env 文件内容为环境变量
+echo "Loading environment variables..."
+export $(grep -v '^#' /app/.env | xargs -d '\n')
+
+# 调试输出
+echo "DEBUG=$DEBUG"
+echo "SECRET_KEY length: ${#SECRET_KEY}"
+echo "ALLOWED_HOSTS=$ALLOWED_HOSTS"
 
 # 确保关键环境变量已设置
-# if [ -z "$SECRET_KEY" ]; then
-#     echo "ERROR: SECRET_KEY is not set!"
-#     exit 1
-# fi
+if [ -z "$SECRET_KEY" ]; then
+    echo "ERROR: SECRET_KEY is not set!"
+    exit 1
+fi
+
+echo "Environment variables loaded successfully."
 
 # 执行数据库迁移
 python manage.py migrate
