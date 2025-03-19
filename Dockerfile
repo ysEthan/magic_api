@@ -44,27 +44,12 @@ fi
 export PYTHONUNBUFFERED=1
 export DJANGO_SETTINGS_MODULE=mysite.settings
 
-# 直接导出 .env 文件内容为环境变量
-echo "Loading environment variables..."
-export $(grep -v '^#' /app/.env | xargs -d '\n')
-
-# 调试输出
-echo "DEBUG=$DEBUG"
-echo "SECRET_KEY length: ${#SECRET_KEY}"
-echo "ALLOWED_HOSTS=$ALLOWED_HOSTS"
-
-# 确保关键环境变量已设置
-if [ -z "$SECRET_KEY" ]; then
-    echo "ERROR: SECRET_KEY is not set!"
-    exit 1
-fi
-
-echo "Environment variables loaded successfully."
-
 # 执行数据库迁移
+echo "Running database migrations..."
 python manage.py migrate
 
 # 启动 Django 服务
+echo "Starting Django server..."
 exec python manage.py runserver 0.0.0.0:8002
 EOF
 
