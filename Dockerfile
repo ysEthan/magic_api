@@ -4,12 +4,12 @@ FROM python:3.12.5-slim as builder
 # 设置工作目录
 WORKDIR /app
 
-# 安装最小必需的依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev \
-    pkg-config \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# # 安装最小必需的依赖
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     default-libmysqlclient-dev \
+#     pkg-config \
+#     build-essential \
+#     && rm -rf /var/lib/apt/lists/*
 
 # 替换为国内源
 RUN mkdir -p ~/.pip \
