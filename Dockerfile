@@ -45,20 +45,20 @@ export PYTHONUNBUFFERED=1
 export DJANGO_SETTINGS_MODULE=mysite.settings
 
 # 加载环境变量
-while IFS='=' read -r key value; do
-    # 忽略注释和空行
-    if [[ ! $key =~ ^#.*$ ]] && [[ -n $key ]]; then
-        # 移除可能的引号和空格
-        value=$(echo "$value" | tr -d '"' | tr -d "'")
-        export "$key=$value"
-    fi
-done < /app/.env
+# while IFS='=' read -r key value; do
+#     # 忽略注释和空行
+#     if [[ ! $key =~ ^#.*$ ]] && [[ -n $key ]]; then
+#         # 移除可能的引号和空格
+#         value=$(echo "$value" | tr -d '"' | tr -d "'")
+#         export "$key=$value"
+#     fi
+# done < /app/.env
 
 # 确保关键环境变量已设置
-if [ -z "$SECRET_KEY" ]; then
-    echo "ERROR: SECRET_KEY is not set!"
-    exit 1
-fi
+# if [ -z "$SECRET_KEY" ]; then
+#     echo "ERROR: SECRET_KEY is not set!"
+#     exit 1
+# fi
 
 # 执行数据库迁移
 python manage.py migrate
