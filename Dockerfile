@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制源代码和配置文件
 COPY . .
-COPY .env.example /app/.env.example
+COPY .env.example /app/.env
 
 # 创建启动脚本
 COPY <<'EOF' /docker-entrypoint.sh
@@ -57,10 +57,6 @@ RUN chmod +x /docker-entrypoint.sh
 
 # 暴露容器端口
 EXPOSE 8002
-
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8002/api/health || exit 1
 
 # 启动命令
 CMD ["/docker-entrypoint.sh"]
