@@ -1,7 +1,7 @@
 cd /code/magic/
 git clone https://github.com/ysEthan/magic_api.git
 cd /code/magic/magic_api
-git fetch origin && git checkout -b b07_procurement origin/b07_procurement
+git fetch origin && git checkout -b b08_procurement origin/b08_procurement
 
 mv -i .env.example .env
 
