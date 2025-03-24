@@ -3,6 +3,8 @@
 debug.log
 /debug.log
 /*/__pycache__/*.pyc
+/apps/*/__pycache__/*.pyc
+
 # Default ignored files
 /media/*
 /logs/*
