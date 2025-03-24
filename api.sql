@@ -5,7 +5,6 @@ git fetch origin && git checkout -b b08_procurement origin/b08_procurement
 
 mv -i .env.example .env
 
-
 docker ps -q | xargs docker stop && docker ps -a -q | xargs docker rm && docker images -q | xargs docker rmi -f
 
 
