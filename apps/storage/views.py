@@ -1,9 +1,11 @@
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.db.models import Sum, F
+from django_filters import rest_framework as filters
 from .models import Warehouse, Inventory, StockIn, StockOut
 from .serializers import (
     WarehouseSerializer, InventorySerializer,
@@ -15,7 +17,7 @@ class WarehouseViewSet(viewsets.ModelViewSet):
     """仓库管理视图集"""
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['status']
     search_fields = ['warehouse_code', 'warehouse_name', 'location', 'contact_phone']
     ordering_fields = ['warehouse_code', 'created_at']
@@ -39,7 +41,7 @@ class InventoryViewSet(viewsets.ModelViewSet):
     """库存管理视图集"""
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['warehouse', 'product']
     search_fields = ['batch_code']
     ordering_fields = ['created_at', 'quantity']
@@ -68,7 +70,7 @@ class StockInViewSet(viewsets.ModelViewSet):
     """入库管理视图集"""
     queryset = StockIn.objects.all()
     serializer_class = StockInSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['warehouse', 'product', 'stock_in_type']
     search_fields = ['stock_in_code', 'source_order', 'remark']
     ordering_fields = ['stock_in_time', 'created_at']
@@ -111,7 +113,7 @@ class StockOutViewSet(viewsets.ModelViewSet):
     """出库管理视图集"""
     queryset = StockOut.objects.all()
     serializer_class = StockOutSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['warehouse', 'product', 'stock_out_type']
     search_fields = ['stock_out_code', 'related_order', 'remark']
     ordering_fields = ['stock_out_time', 'created_at']

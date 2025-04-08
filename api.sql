@@ -117,6 +117,115 @@ git add . && git commit -m "order & logistics" && git push
 
 
 
-"07 采购管理 优化 ============================="
+"08 采购管理 优化 ============================="
 git checkout -b b08_procurement
 git add . && git commit -m "order & logistics" && git push
+
+
+"09 增加库存动态功能 ============================="
+git checkout -b b09_inventory_change
+git add . && git commit -m "inventory_change" && git push
+
+
+我们需要在前端展示库存变化明细，请帮我开发对应的API接口，
+匹配一下请求参数和相应数据示例
+
+接口路径：/api/storage/inventory-history/
+1，请求参数：
+{
+  "page": 1,                    // 页码，默认 1
+  "page_size": 10,             // 每页数量，默认 10
+  "warehouse": 1,              // 仓库 ID，可选
+  "product": "测试商品",        // 商品名称或 SKU，可选
+  "operation_type": "in",      // 操作类型，可选：in/out/check/transfer
+  "start_date": "2024-01-01",  // 开始日期，可选
+  "end_date": "2024-01-31"     // 结束日期，可选
+}
+
+2，响应数据示例：
+{
+  "count": 100,  // 总记录数
+  "results": [
+    {
+      "id": 1,
+      "warehouse_id": 1,
+      "warehouse_name": "主仓库",
+      "product_id": 101,
+      "product_name": "测试商品A",
+      "sku": "SKU001",
+      "operation_type": "in",
+      "quantity": 100,
+      "before_quantity": 0,
+      "after_quantity": 100,
+      "unit": "个",
+      "operator": "张三",
+      "operation_time": "2024-01-15 14:30:00",
+      "remark": "采购入库",
+      "source_type": "purchase",      // 来源类型：purchase/sale/inventory/transfer
+      "source_id": 1001,             // 来源单据ID
+      "source_number": "PO20240115001" // 来源单据编号
+    },
+    {
+      "id": 2,
+      "warehouse_id": 1,
+      "warehouse_name": "主仓库",
+      "product_id": 102,
+      "product_name": "测试商品B",
+      "sku": "SKU002",
+      "operation_type": "out",
+      "quantity": 50,
+      "before_quantity": 200,
+      "after_quantity": 150,
+      "unit": "个",
+      "operator": "李四",
+      "operation_time": "2024-01-15 15:45:00",
+      "remark": "销售出库",
+      "source_type": "sale",
+      "source_id": 2001,
+      "source_number": "SO20240115001"
+    },
+    {
+      "id": 3,
+      "warehouse_id": 2,
+      "warehouse_name": "分仓库",
+      "product_id": 101,
+      "product_name": "测试商品A",
+      "sku": "SKU001",
+      "operation_type": "transfer",
+      "quantity": 30,
+      "before_quantity": 100,
+      "after_quantity": 70,
+      "unit": "个",
+      "operator": "王五",
+      "operation_time": "2024-01-16 09:15:00",
+      "remark": "调拨至分仓库",
+      "source_type": "transfer",
+      "source_id": 3001,
+      "source_number": "TR20240116001"
+    },
+    {
+      "id": 4,
+      "warehouse_id": 1,
+      "warehouse_name": "主仓库",
+      "product_id": 103,
+      "product_name": "测试商品C",
+      "sku": "SKU003",
+      "operation_type": "check",
+      "quantity": 5,
+      "before_quantity": 95,
+      "after_quantity": 100,
+      "unit": "个",
+      "operator": "赵六",
+      "operation_time": "2024-01-16 16:20:00",
+      "remark": "盘盈调整",
+      "source_type": "inventory",
+      "source_id": 4001,
+      "source_number": "IC20240116001"
+    }
+  ]
+}
+
+
+首先添加理由
+然后添加视图函数，
+再实现序列化器

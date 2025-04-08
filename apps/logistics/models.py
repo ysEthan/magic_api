@@ -6,6 +6,38 @@ from apps.trade.models import Order
 User = get_user_model()
 
 
+class LogisticsStatus(models.Model):
+    """物流状态模型"""
+    STATUS_CHOICES = [
+        ('unshipped', _('未发货')),
+        ('InfoReceived', _('已接收信息')),
+        ('PickedUp', _('已揽收')),
+        ('Departure', _('已发出')),
+        ('Arrival', _('已到达')),
+        ('AvailableForPickup', _('可提货')),
+        ('OutForDelivery', _('派送中')),
+        ('Delivered', _('已签收')),
+        ('Returning', _('退回中')),
+        ('Returned', _('已退回')),
+    ]
+
+    code = models.CharField(_('状态代码'), max_length=20, choices=STATUS_CHOICES, unique=True)
+    name = models.CharField(_('状态名称'), max_length=50)
+    description = models.TextField(_('状态描述'), blank=True)
+    is_active = models.BooleanField(_('是否启用'), default=True)
+    created_at = models.DateTimeField(_('创建时间'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('更新时间'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('物流状态')
+        verbose_name_plural = _('物流状态')
+        ordering = ['code']
+        db_table = 'logistics_status'
+
+    def __str__(self):
+        return f"{self.get_code_display()} - {self.name}"
+
+
 class Carrier(models.Model):
     """物流商模型"""
     id = models.AutoField('ID', primary_key=True)
@@ -56,14 +88,6 @@ class Service(models.Model):
 
 class Package(models.Model):
     """包裹模型"""
-    STATUS_CHOICES = [
-        ('0', _('待发货')),
-        ('1', _('待揽收')),
-        ('2', _('转运中')),
-        ('3', _('已签收')),
-        ('4', _('已取消')),
-    ]
-
     id = models.AutoField('ID', primary_key=True)
     order = models.OneToOneField(
         Order,
@@ -84,15 +108,15 @@ class Package(models.Model):
         blank=True,
         null=True
     )
-    pkg_status_code = models.CharField(
-        _('包裹状态码'),
-        max_length=4,
-        choices=STATUS_CHOICES,
-        default='0'
+    status = models.ForeignKey(
+        LogisticsStatus,
+        on_delete=models.PROTECT,
+        verbose_name=_('包裹状态'),
+        related_name='packages'
     )
     service = models.ForeignKey(
         Service,
-        on_delete=models.PROTECT,  # 使用PROTECT避免误删除物流服务
+        on_delete=models.PROTECT,
         verbose_name=_('物流服务'),
         related_name='packages'
     )
@@ -184,14 +208,6 @@ class Package(models.Model):
 
 class Tracking(models.Model):
     """包裹物流轨迹"""
-    STATUS_CHOICES = [
-        (0, _('待发货')),
-        (1, _('待揽收')),
-        (2, _('转运中')),
-        (3, _('已签收')),
-        (4, _('已取消')),
-    ]
-
     id = models.AutoField('ID', primary_key=True)
     package = models.ForeignKey(
         Package,
@@ -199,10 +215,11 @@ class Tracking(models.Model):
         verbose_name=_('包裹'),
         related_name='tracking_records'
     )
-    status = models.IntegerField(
-        _('物流状态'),
-        choices=STATUS_CHOICES,
-        default=0
+    status = models.ForeignKey(
+        LogisticsStatus,
+        on_delete=models.PROTECT,
+        verbose_name=_('物流状态'),
+        related_name='tracking_records'
     )
     location = models.CharField(_('当前位置'), max_length=100)
     description = models.CharField(_('轨迹描述'), max_length=200)
@@ -224,4 +241,4 @@ class Tracking(models.Model):
         db_table = 'logistics_tracking'
 
     def __str__(self):
-        return f"{self.package.tracking_no} - {self.get_status_display()}" 
+        return f"{self.package.tracking_no} - {self.status.name}" 

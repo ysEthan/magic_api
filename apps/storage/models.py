@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.conf import settings
+from apps.products.models import Product
 
 User = get_user_model()
 
@@ -54,7 +56,7 @@ class Inventory(models.Model):
     )
     unit_cost = models.DecimalField(
         max_digits=10,
-        decimal_places=2,
+        decimal_places=4,
         verbose_name='单位成本',
         help_text='入库时的单位成本金额',
         default=0
@@ -115,7 +117,7 @@ class StockIn(models.Model):
     )
     unit_cost = models.DecimalField(
         max_digits=10,
-        decimal_places=2,
+        decimal_places=4,
         verbose_name='单位成本',
         help_text='入库时的单位成本金额',
         default=0
